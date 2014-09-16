@@ -1,0 +1,25 @@
+{
+    "name": "mongoose-format-fields",
+    "description": "A plugin for Mongoose that formats the output of a model depending on the grants allowed",
+    "version": "0.1.0",
+    "author": "Flavio Del Bianco <info@flaviodelbianco.com>",
+    "keywords": [
+        "mongodb",
+        "mongoose",
+        "plugin",
+        "format",
+        "fields",
+        "grants"
+    ],
+    "repository": {
+        "type": "git",
+        "url": "git://github.com/flaviodelbianco/mongoose-format-fields"
+    },
+    "dependencies": {
+        "extend": "~1.3.0"
+    },
+    "license": "MIT",
+    "engine": {
+        "node": ">= 0.6"
+    }
+}
