@@ -13,7 +13,7 @@
     ],
     "repository": {
         "type": "git",
-        "url": "git://github.com/flaviodelbianco/mongoose-format-fields"
+        "url": "git://github.com/flaviodelbianco/mongoose-format-fields.git"
     },
     "dependencies": {
         "extend": "~1.3.0"
