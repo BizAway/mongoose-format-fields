@@ -1,7 +1,7 @@
 {
     "name": "mongoose-format-fields",
     "description": "A plugin for Mongoose that formats the output of a model depending on the grants allowed",
-    "version": "0.1.1",
+    "version": "0.1.2",
     "author": "Flavio Del Bianco <info@flaviodelbianco.com>",
     "keywords": [
         "mongodb",
