@@ -104,8 +104,6 @@ var format_fields_plugin = function (schema, options) {
             }
         });
 
-        console.log(output);
-
         return output;
     }
 
