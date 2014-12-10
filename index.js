@@ -3,7 +3,9 @@ var util = require('util'),
 
 var format_fields_plugin = function (schema, options) {
 
-    var getGrants = function (options) {
+    schema.grantSchema = {};
+
+    var getGrantsFromOptions = function (name, options) {
         if (options.grants) {
             var requested_grants = options.grants;
         } else if (options.type && options.type[0] && options.type[0].grants) {
@@ -17,6 +19,14 @@ var format_fields_plugin = function (schema, options) {
         }
 
         return requested_grants;
+    };
+
+    for (var name in schema.paths) {
+        var options = schema.paths[name].options;
+        if (schema.paths[name].schema) {
+            options = schema.paths[name].schema.options;
+        }
+        schema.grantSchema[name] = getGrantsFromOptions(name, options);
     }
 
     var isAllowed = function (requested_grants, grants) {
@@ -26,9 +36,9 @@ var format_fields_plugin = function (schema, options) {
             }
         }
         return false;
-    }
+    };
 
-    var checkFields = function (schema, entity, grants) {
+    var checkSchema = function (schema, entity, grants) {
         var output = {},
             paths = schema.paths;
 
@@ -45,12 +55,9 @@ var format_fields_plugin = function (schema, options) {
                 }
             }
         }
-        Object.keys(paths).forEach(function (name) {
-            if (paths[name].schema) {
-                var requested_grants = getGrants(paths[name].schema.options);
-            } else {
-                var requested_grants = getGrants(paths[name].options);
-            }
+        for (var name in paths) {
+            var requested_grants = (schema.grantSchema[name]) || [];
+
             if (requested_grants && isAllowed(requested_grants, grants)) {
                 var arrName = name.split('.');
                 var first = arrName[0];
@@ -102,10 +109,21 @@ var format_fields_plugin = function (schema, options) {
                     }
                 }
             }
-        });
-
+        }
         return output;
-    }
+    };
+
+    schema.setGrantsSchema = function (grantsSchema) {
+        schema.grantSchema = extend(schema.grantSchema, grantsSchema);
+    };
+
+    schema.setFieldGrants = function (fieldName, grants) {
+        schema.grantSchema[fieldName] = grants;
+    };
+
+    schema.getFieldGrants = function (fieldName) {
+        return (schema.grantSchema[fieldName]) || null;
+    };
 
     schema.static('format', function (entity, grants) {
 
@@ -114,7 +132,7 @@ var format_fields_plugin = function (schema, options) {
 
         grants.push("public");
 
-        return checkFields(schema, entity, grants);
+        return checkSchema(schema, entity, grants);
     });
 
     schema.methods.format = function (grants) {
@@ -122,4 +140,4 @@ var format_fields_plugin = function (schema, options) {
     };
 };
 
-module.exports = exports = format_fields_plugin;
+module.exports = format_fields_plugin;
