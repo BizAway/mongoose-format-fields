@@ -40,7 +40,8 @@ var format_fields_plugin = function (schema, options) {
 
     var checkSchema = function (schema, entity, grants) {
         var output = {},
-            paths = schema.paths;
+            paths = schema.paths,
+            virtualPaths = schema.virtuals;
 
         if (schema.options.id_grants) {
             var requested_grants = (schema.options.id_grants) ? schema.options.id_grants: null;
@@ -53,6 +54,11 @@ var format_fields_plugin = function (schema, options) {
                 } else {
                     output['_id'] = entity['_id'];
                 }
+            }
+        }
+        for (var virtualName in virtualPaths) {
+            if (virtualName !== 'id') {
+                output[virtualName] = virtualPaths[virtualName].getters[0]();
             }
         }
         for (var name in paths) {
