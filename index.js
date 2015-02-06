@@ -58,7 +58,7 @@ var format_fields_plugin = function (schema, options) {
         }
         for (var virtualName in virtualPaths) {
             if (virtualName !== 'id') {
-                output[virtualName] = virtualPaths[virtualName].getters[0].call(entity);
+                output[virtualName] = entity[virtualName];
             }
         }
         for (var name in paths) {
