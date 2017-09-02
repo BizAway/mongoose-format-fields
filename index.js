@@ -1,6 +1,5 @@
 var util = require('util'),
-    extend = require('extend'),
-    dot = require('dot-object');
+    extend = require('extend');
 
 var format_fields_plugin = function (schema, plugin_options) {
 

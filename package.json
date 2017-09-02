@@ -16,7 +16,6 @@
     "url": "git://github.com/flaviodelbianco/mongoose-format-fields.git"
   },
   "dependencies": {
-    "dot-object": "^1.5.4",
     "extend": "~1.3.0"
   },
   "license": "MIT",
