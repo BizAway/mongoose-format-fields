@@ -1,7 +1,7 @@
 {
   "name": "mongoose-format-fields",
   "description": "A plugin for Mongoose that formats the output of a model depending on the tags associated",
-  "version": "0.3.1",
+  "version": "0.4.0",
   "author": "Flavio Del Bianco <info@flaviodelbianco.com>",
   "keywords": [
     "mongodb",
