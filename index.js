@@ -41,6 +41,8 @@ var format_fields_plugin = function (schema, plugin_options) {
                     type = 'id';
                 } else if (Object.prototype.toString.call(obj[name]) === '[object Array]') {
                     type = 'array';
+                } else if (obj[name] && obj[name].toString) {
+                    type = 'other';
                 } else if (Object.prototype.toString.call(obj[name]) === '[object Object]') {
                     type = 'object';
                 } else {
@@ -97,7 +99,7 @@ var format_fields_plugin = function (schema, plugin_options) {
                 break;
             }
             case 'object': {
-                return manageObject(value, tags, field_name+'.');
+                return manageObject(value, tags, field_name+'.', true);
             }
             default: {
                 var requested_tags = schema.tags_schema[field_name];
@@ -161,14 +163,12 @@ var format_fields_plugin = function (schema, plugin_options) {
 
     // deprecated
     schema.setGrantsSchema = function (grantsSchema) {
-        Object.assign(schema.tags_schema, grantsSchema);
-        return schema;
+        return schema.addTagsSchema(grantsSchema);
     };
 
     // deprecated
     schema.setFieldGrants = function (field_name, grants) {
-        schema.tags_schema[field_name] = grants;
-        return schema;
+        return schema.setFieldTags(field_name, grants);
     };
 
     // deprecated
