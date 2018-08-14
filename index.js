@@ -198,7 +198,12 @@ var format_fields_plugin = function (schema, plugin_options) {
     };
 
     schema.setFieldTags = function (field_name, tags) {
-        schema.tags_schema[field_name] = tags;
+        if (!schema.tags_schema[field_name]) {
+            schema.tags_schema[field_name] = {
+                tags: []
+            }
+        }
+        schema.tags_schema[field_name].tags = tags;
         return schema;
     };
 
