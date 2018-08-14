@@ -8,6 +8,10 @@ var format_fields_plugin = function (schema, plugin_options) {
             requested_tags = options.tags;
         } else if (options.grants) {
             requested_tags = options.grants;
+        } else if (options.type && options.type[0] && options.type[0].grants) {
+            requested_tags = options.type[0].grants;
+        } else if (options.type && options.type[0] && options.type[0].tags) {
+            requested_tags = options.type[0].tags;
         } else {
             requested_tags = null;
         }
@@ -39,17 +43,17 @@ var format_fields_plugin = function (schema, plugin_options) {
             if (obj.hasOwnProperty(name)) {
                 if (name === '_id') {
                     type = 'id';
+                } else if (obj[name] && obj[name].constructor.name === 'ObjectID') {
+                    type = 'other';
                 } else if (Object.prototype.toString.call(obj[name]) === '[object Array]') {
                     type = 'array';
-                } else if (obj[name] && obj[name].toString) {
-                    type = 'other';
                 } else if (Object.prototype.toString.call(obj[name]) === '[object Object]') {
                     type = 'object';
                 } else {
                     type = 'other';
                 }
 
-                var field_name = (prefix) ? prefix+name : name;
+                var field_name = (prefix) ? prefix + name : name;
                 var value = getValueByType(field_name, obj[name], type, tags);
 
                 if (value !== undefined) {
@@ -64,7 +68,7 @@ var format_fields_plugin = function (schema, plugin_options) {
             if (Object.keys(output).length > 0) {
                 return output;
             }
-            return;
+            return undefined;
         }
     };
 
