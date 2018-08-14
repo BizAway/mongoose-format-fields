@@ -75,44 +75,40 @@ var format_fields_plugin = function (schema, plugin_options) {
     var getValueByType = function (field_name, value, type, tags) {
         switch (type) {
             case 'array': {
-                var requested_tags = schema.tags_schema[field_name];
-                if (requested_tags && isAllowed(requested_tags, tags)) {
-                    var array = [],
-                        is_object_array = false;
-                    for (var i = 0; i < value.length; i++) {
-                        var e = value[i];
-                        if (Object.prototype.toString.call(e) === '[object Object]') {
-                            is_object_array = true;
-                            array.push(manageObject(e, tags, field_name+'.$.', true));
+                var tags_schema = schema.tags_schema[field_name];
+                if (tags_schema && tags_schema.tags && isAllowed(tags_schema.tags, tags)) {
+                    if (Object.prototype.toString.call(value[0]) === '[object Object]') {
+                        var array = [];
+                        for (var i = 0; i < value.length; i++) {
+                            array.push(manageObject(value[i], tags, field_name+'.$.', true));
                         }
-                    }
-
-                    if (!is_object_array) {
-                        var requested_tags = schema.tags_schema[field_name];
-                        if (requested_tags && isAllowed(requested_tags, tags)) {
-                            return value;
-                        } else {
-                            return undefined;
-                        }
-                    } else {
                         return array;
+                    } else {
+                        return value;
                     }
                 } else {
                     return undefined;
                 }
-                break;
             }
             case 'object': {
-                return manageObject(value, tags, field_name+'.', true);
+                var tags_schema = schema.tags_schema[field_name];
+                if (tags_schema && tags_schema.instance === 'Mixed') {
+                    if (tags_schema.tags && isAllowed(tags_schema.tags, tags)) {
+                        return value;
+                    } else {
+                        return undefined;
+                    }
+                } else {
+                    return manageObject(value, tags, field_name+'.');
+                }
             }
             default: {
-                var requested_tags = schema.tags_schema[field_name];
-                if (requested_tags && isAllowed(requested_tags, tags)) {
+                var tags_schema = schema.tags_schema[field_name];
+                if (tags_schema && tags_schema.tags && isAllowed(tags_schema.tags, tags)) {
                     return value;
                 } else {
                     return undefined;
                 }
-                break;
             }
         }
     }
@@ -123,7 +119,10 @@ var format_fields_plugin = function (schema, plugin_options) {
             var field = schema.paths[name];
             if ((field.instance === 'Array' || field.instance === 'Embedded')  && field.schema) {
                 if (field.schema.options.grants || field.schema.options.tags) {
-                    tags_schema[name] = getTagsFromOptions(name, field.schema.options);
+                    tags_schema[name] = {
+                        tags: getTagsFromOptions(name, field.schema.options),
+                        instance : field.instance
+                    }
                 }
                 var sub_tags_schema = getTagsFromSchema(field.schema);
                 for (var sub_name in sub_tags_schema) {
@@ -135,7 +134,10 @@ var format_fields_plugin = function (schema, plugin_options) {
                 if (name === '_id') {
                     opt.tags = (schema.options.id_grants) ? schema.options.id_grants : schema.options.id_tags;
                 }
-                tags_schema[name] = getTagsFromOptions(name, opt);
+                tags_schema[name] = {
+                    tags     : getTagsFromOptions(name, opt),
+                    instance : field.instance
+                };
             }
         }
         return tags_schema;
@@ -181,7 +183,17 @@ var format_fields_plugin = function (schema, plugin_options) {
     };
 
     schema.addTagsSchema = function (tags_schema) {
-        Object.assign(schema.tags_schema, tags_schema);
+        for (var name in tags_schema) {
+            if (tags_schema.hasOwnProperty(name)) {
+                let v = tags_schema[name];
+                if (!schema.tags_schema[name]) {
+                    schema.tags_schema[name] = {
+                        tags: []
+                    }
+                }
+                schema.tags_schema[name].tags = v;
+            }
+        }
         return schema;
     };
 
