@@ -77,7 +77,9 @@ var format_fields_plugin = function (schema, plugin_options) {
             case 'array': {
                 var tags_schema = schema.tags_schema[field_name];
                 if (tags_schema && tags_schema.tags && isAllowed(tags_schema.tags, tags)) {
-                    if (Object.prototype.toString.call(value[0]) === '[object Object]') {
+                    if (value[0] && value[0].constructor && value[0].constructor.name === 'ObjectID') {
+                        return value;
+                    } else if (Object.prototype.toString.call(value[0]) === '[object Object]') {
                         var array = [];
                         for (var i = 0; i < value.length; i++) {
                             array.push(manageObject(value[i], tags, field_name+'.$.', true));
