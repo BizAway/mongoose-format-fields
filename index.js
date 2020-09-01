@@ -23,11 +23,6 @@ var format_fields_plugin = function (schema, plugin_options) {
         return requested_tags;
     };
 
-    var getOutputFromOptions = function (name, options) {
-        var output_field = name;
-        return options.output || name;
-    };
-
     var isAllowed = function (requested_tags, tags) {
         for (var n = 0; n < tags.length; n++) {
             if (requested_tags.indexOf(tags[n]) >= 0) {

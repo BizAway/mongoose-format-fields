@@ -1,7 +1,7 @@
 mongoose-format-fields
 ======================
 
-A plugin for [Mongoose](https://github.com/LearnBoost/mongoose) that formats the output of a model depending on the tags associated.
+A plugin for [Mongoose](https://github.com/Automattic/mongoose) that formats the output of a model depending on the tags associated.
 
 ## Installation
 

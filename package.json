@@ -1,8 +1,14 @@
 {
   "name": "mongoose-format-fields",
   "description": "A plugin for Mongoose that formats the output of a model depending on the tags associated",
-  "version": "0.4.3",
+  "version": "0.5.0",
   "author": "Flavio Del Bianco <info@flaviodelbianco.com>",
+  "main": "index.js",
+  "homepage": "https://github.com/BizAway/mongoose-format-fields",
+  "scripts": {
+    "test": "mocha ./test/*.js",
+    "test-travis": "nyc --reporter=lcov npm test && nyc check-coverage --lines 80 --functions 80 --branches 80"
+  },
   "keywords": [
     "mongodb",
     "mongoose",
@@ -13,14 +19,18 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git://github.com/flaviodelbianco/mongoose-format-fields.git"
+    "url": "https://github.com/BizAway/mongoose-format-fields.git"
   },
   "dependencies": {},
   "license": "MIT",
-  "engine": {
-    "node": ">= 0.6"
-  },
   "devDependencies": {
-    "mongoose": "^4.11.9"
+    "mongoose": "5.8.9",
+    "mocha": "^8.1.3"
+  },
+  "peerDependencies": {
+    "mongoose": "4.x || 5.x"
+  },
+  "bugs": {
+    "url": "https://github.com/BizAway/mongoose-format-fields/issues"
   }
 }
