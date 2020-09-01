@@ -1,5 +1,3 @@
-var util = require('util');
-
 var format_fields_plugin = function (schema, plugin_options) {
 
     var getTagsFromOptions = function (name, options) {
@@ -16,7 +14,7 @@ var format_fields_plugin = function (schema, plugin_options) {
             requested_tags = null;
         }
 
-        if (requested_tags && !util.isArray(requested_tags)) {
+        if (requested_tags && !Array.isArray(requested_tags)) {
             requested_tags = [requested_tags];
         }
 
@@ -219,7 +217,7 @@ var format_fields_plugin = function (schema, plugin_options) {
     };
 
     schema.static('format', function (entity, tags) {
-        if (!tags || !util.isArray(tags))
+        if (!tags || !Array.isArray(tags))
             tags = [];
 
         tags.push('public');
