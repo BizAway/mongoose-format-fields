@@ -4,7 +4,7 @@ var Schema = mongoose.Schema;
 var ObjectId = mongoose.Schema.Types.ObjectId;
 
 var FormatFieldsPlugin = require('../');
-
+var birthday = new Date();
 describe('mongooose-format-fields plugin', function () {
     var User;
     var Role;
@@ -14,8 +14,6 @@ describe('mongooose-format-fields plugin', function () {
           useNewUrlParser: true,
           useUnifiedTopology: true
         });
-
-        var birthday = new Date();
 
         var RoleSchema = new Schema({
             name: {
@@ -66,7 +64,7 @@ describe('mongooose-format-fields plugin', function () {
         UserSchema.addTagsSchema({
             'birthday': ['owner'],
             'address.city': ['owner', 'admin'],
-            'address.nation': ['owner', 'admin'],
+            'address.nation': ['admin'],
             'aliases': ['owner'],
             'aliases.$.name': ['owner']
         });
@@ -125,14 +123,15 @@ describe('mongooose-format-fields plugin', function () {
         return mongoose.disconnect();
     });
 
-    it('format the output based on tags using format(\'string\')', function (done) {
+    it('format the output based on tags using format() (only \'public\' fields are shown)', function (done) {
 
         User.findOne({ email: 'pippo@pippo.com' }, function (err, doc) {
             assert.ifError(err);
-            var formatted = doc.format('public');
-            assert.equal('pippo', formatted.username);
-            assert.notEqual('pippo@pippo.com', formatted.email);
-            assert.notEqual('abcd12456', formatted.password);
+            var formatted = doc.format();
+            var expected = {
+                username: 'pippo'
+            };
+            assert.deepStrictEqual(formatted, expected);
             done();
         });
     });
@@ -141,10 +140,21 @@ describe('mongooose-format-fields plugin', function () {
 
         User.findOne({ email: 'pippo@pippo.com' }, function (err, doc) {
             assert.ifError(err);
-            var formatted = doc.format(['public', 'owner']);
-            assert.equal('pippo', formatted.username);
-            assert.equal('pippo@pippo.com', formatted.email);
-            assert.notEqual('abcd12456', formatted.password);
+            var formatted = doc.format(['owner']);
+            var expected = {
+                username: 'pippo',
+                email: 'pippo@pippo.com',
+                birthday: birthday,
+                address: {
+                    city: 'Spilimbergo'
+                },
+                aliases: [{
+                    name: 'Pippuz'
+                }, {
+                    name: 'Pippuccino'
+                }]
+            };
+            assert.deepStrictEqual(formatted, expected);
             done();
         });
     });
@@ -153,10 +163,16 @@ describe('mongooose-format-fields plugin', function () {
     it('format the ouput of the fields tagged with Schema.addTagsSchema()', function(done) {
         User.findOne({ email: 'pippo@pippo.com' }, function (err, doc) {
             assert.ifError(err);
-            var formatted = doc.format(['public', 'owner']);
-            assert.equal('Spilimbergo', formatted.address.city);
-            assert.equal('Pippuz', formatted.aliases[0].name);
-            assert.notEqual('abcd12456', formatted.password);
+            var formatted = doc.format(['admin']);
+            var expected = {
+                username: 'pippo',
+                email: 'pippo@pippo.com',
+                address: {
+                    city: 'Spilimbergo',
+                    nation: 'Italy'
+                }
+            };
+            assert.deepStrictEqual(formatted, expected);
             done();
         });
     });
@@ -166,9 +182,26 @@ describe('mongooose-format-fields plugin', function () {
         User.findOne({ email: 'pippo@pippo.com' }).populate('role').exec(function (err, doc) {
             assert.ifError(err);
             // ensure that we are loading the virtuals correctly
-            assert.equal('Editor', doc.role.name);
-            var formatted = doc.format(['public', 'owner']);
-            assert.notEqual('abcd12456', formatted.password);
+            assert.strictEqual('Editor', doc.role.name);
+            var formatted = doc.format(['owner']);
+            var expected = {
+                username: 'pippo',
+                email: 'pippo@pippo.com',
+                birthday: birthday,
+                address: {
+                    city: 'Spilimbergo'
+                },
+                aliases: [{
+                    name: 'Pippuz'
+                }, {
+                    name: 'Pippuccino'
+                }],
+                role: {
+                    name: 'Editor',
+                    permits: ['edit', 'view', 'reject']
+                }
+            };
+            assert.deepStrictEqual(expected, formatted);
             assert.doesNotThrow(function () {
                 var roleName = formatted.role.name;
                 return roleName;
