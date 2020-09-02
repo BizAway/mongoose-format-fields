@@ -31,10 +31,12 @@ var formatFieldsPlugin = function (schema) {
 
   var manageObject = function (entity, obj, tags, prefix, returnAlways) {
     var output = {}
-    var isVirtual = false;
     for (var [name, field] of Object.entries(obj)) {
-      isVirtual = isVirtualField(entity, name);
+      var fieldName = (prefix) ? prefix + name : name
+      var isVirtual = isVirtualField(entity, fieldName);
+      
       var type
+      var value
       if (name === '_id') {
         type = 'id'
       } else if (field && field.constructor.name === 'ObjectID') {
@@ -47,9 +49,9 @@ var formatFieldsPlugin = function (schema) {
         type = 'other'
       }
 
-      var value
+      
       if (isVirtual) {
-        var virtualEntity = entity.get(name)
+        var virtualEntity = entity.get(fieldName)
         if (type === 'array') {
           output[name] = []
           for (var [idx, item] of virtualEntity.entries()) {
@@ -58,9 +60,7 @@ var formatFieldsPlugin = function (schema) {
         } else {
           output[name] = manageObject(virtualEntity, field, tags)
         }
-        
       } else {
-        var fieldName = (prefix) ? prefix + name : name
         var value = getValueByType(entity, fieldName, field, type, tags)
         if (value !== undefined) {
           var outputName = entity.schema.output_schema[fieldName] || name
@@ -177,7 +177,6 @@ var formatFieldsPlugin = function (schema) {
     }
     for (var [fieldName, virtualField] of Object.entries(entity.schema.virtuals)) {
       if (virtualField.path === path) {
-        console.log(path)
         return true
       }
     }
@@ -251,8 +250,8 @@ var formatFieldsPlugin = function (schema) {
     if (!tags || !Array.isArray(tags)) { tags = [] }
 
     tags.push('public')
-
-    var obj = manageObject(entity, entity.toObject({ virtuals: optsDefaults.virtuals }), tags)
+    var objEntity = entity.toObject({ virtuals: optsDefaults.virtuals });
+    var obj = manageObject(entity, objEntity, tags)
     return obj
   })
 

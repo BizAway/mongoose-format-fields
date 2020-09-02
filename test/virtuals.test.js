@@ -35,7 +35,7 @@ describe('Testing with virtuals – mongooose-format-fields plugin', function ()
         },
         description: {
             type: String,
-            tags: ['owner', 'admin']
+            tags: ['owner']
         }
     });
 
@@ -80,7 +80,7 @@ describe('Testing with virtuals – mongooose-format-fields plugin', function ()
       justOne: true
     })
 
-    UserSchema.virtual('group', {
+    UserSchema.virtual('group_info.group', {
       ref: 'Group',
       localField: 'group_info.group_id',
       foreignField: '_id',
@@ -89,6 +89,7 @@ describe('Testing with virtuals – mongooose-format-fields plugin', function ()
 
     UserSchema.plugin(FormatFieldsPlugin)
     RoleSchema.plugin(FormatFieldsPlugin)
+    GroupSchema.plugin(FormatFieldsPlugin)
 
     UserSchema.addTagsSchema({
       'birthday': ['owner'],
@@ -168,11 +169,11 @@ describe('Testing with virtuals – mongooose-format-fields plugin', function ()
   })
 
   it('format the output based on tags of virtual fields .format([\'tag\'], { virtuals: true })', function (done) {
-    User.findOne({ email: 'pippo@pippo.com' }).populate('role group').exec(function (err, doc) {
+    User.findOne({ email: 'pippo@pippo.com' }).populate('role group_info.group').exec(function (err, doc) {
       assert.ifError(err)
       // ensure that we are loading the virtuals correctly
       assert.strictEqual('Editor', doc.role.name)
-      assert.strictEqual('Best Group', doc.group.name)
+      assert.strictEqual('Best Group', doc.group_info.group.name)
       var formatted = doc.format(['owner'], { virtuals: true })
       var expected = {
         username: 'pippo',
@@ -189,6 +190,13 @@ describe('Testing with virtuals – mongooose-format-fields plugin', function ()
         role: {
           name: 'Editor',
           permits: ['edit', 'view', 'reject']
+        },
+        group_info: {
+          is_admin: true,
+          group: {
+            name: 'Best Group',
+            description: 'The very Best Group'
+          } 
         }
       }
       assert.deepStrictEqual(formatted, expected)
