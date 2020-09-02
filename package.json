@@ -7,7 +7,7 @@
   "homepage": "https://github.com/BizAway/mongoose-format-fields",
   "scripts": {
     "test": "mocha ./test/*.js",
-    "test-travis": "npm run linter && nyc --reporter=lcov npm test && nyc check-coverage --lines 80 --functions 80 --branches 80",
+    "test-travis": "npm run linter && nyc --reporter=lcov npm test && nyc check-coverage --lines 50 --functions 50 --branches 50",
     "linter-autofix": "standard --fix",
     "linter": "standard"
   },
