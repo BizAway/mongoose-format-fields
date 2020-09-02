@@ -29,28 +29,41 @@ var formatFieldsPlugin = function (schema) {
     return false
   }
 
-  var manageObject = function (obj, tags, prefix, returnAlways) {
+  var manageObject = function (entity, obj, tags, prefix, returnAlways) {
     var output = {}
-    var type
-    for (var name in obj) {
-      if (Object.prototype.hasOwnProperty.call(obj, name)) {
-        if (name === '_id') {
-          type = 'id'
-        } else if (obj[name] && obj[name].constructor.name === 'ObjectID') {
-          type = 'other'
-        } else if (Object.prototype.toString.call(obj[name]) === '[object Array]') {
-          type = 'array'
-        } else if (Object.prototype.toString.call(obj[name]) === '[object Object]') {
-          type = 'object'
+    var isVirtual = false;
+    for (var [name, field] of Object.entries(obj)) {
+      isVirtual = isVirtualField(entity, name);
+      var type
+      if (name === '_id') {
+        type = 'id'
+      } else if (field && field.constructor.name === 'ObjectID') {
+        type = 'other'
+      } else if (Object.prototype.toString.call(field) === '[object Array]') {
+        type = 'array'
+      } else if (Object.prototype.toString.call(field) === '[object Object]') {
+        type = 'object'
+      } else {
+        type = 'other'
+      }
+
+      var value
+      if (isVirtual) {
+        var virtualEntity = entity.get(name)
+        if (type === 'array') {
+          output[name] = []
+          for (var [idx, item] of virtualEntity.entries()) {
+            output[name].push(manageObject(item, field[idx], tags))
+          }
         } else {
-          type = 'other'
+          output[name] = manageObject(virtualEntity, field, tags)
         }
-
+        
+      } else {
         var fieldName = (prefix) ? prefix + name : name
-        var value = getValueByType(fieldName, obj[name], type, tags)
-
+        var value = getValueByType(entity, fieldName, field, type, tags)
         if (value !== undefined) {
-          var outputName = schema.output_schema[fieldName] || name
+          var outputName = entity.schema.output_schema[fieldName] || name
           output[outputName] = value
         }
       }
@@ -65,18 +78,18 @@ var formatFieldsPlugin = function (schema) {
     }
   }
 
-  var getValueByType = function (fieldName, value, type, tags) {
+  var getValueByType = function (entity, fieldName, value, type, tags) {
     var tagsSchema
     switch (type) {
       case 'array': {
-        tagsSchema = schema.tags_schema[fieldName]
+        tagsSchema = entity.schema.tags_schema[fieldName]
         if (tagsSchema && tagsSchema.tags && isAllowed(tagsSchema.tags, tags)) {
           if (value[0] && value[0].constructor && value[0].constructor.name === 'ObjectID') {
             return value
           } else if (Object.prototype.toString.call(value[0]) === '[object Object]') {
             var array = []
-            for (var i = 0; i < value.length; i++) {
-              array.push(manageObject(value[i], tags, fieldName + '.$.', true))
+            for (var item of value) {
+              array.push(manageObject(entity, item, tags, fieldName + '.$.', true))
             }
             return array
           } else {
@@ -87,7 +100,7 @@ var formatFieldsPlugin = function (schema) {
         }
       }
       case 'object': {
-        tagsSchema = schema.tags_schema[fieldName]
+        tagsSchema = entity.schema.tags_schema[fieldName]
         if (tagsSchema && tagsSchema.instance === 'Mixed') {
           if (tagsSchema.tags && isAllowed(tagsSchema.tags, tags)) {
             return value
@@ -95,11 +108,11 @@ var formatFieldsPlugin = function (schema) {
             return undefined
           }
         } else {
-          return manageObject(value, tags, fieldName + '.')
+          return manageObject(entity, value, tags, fieldName + '.')
         }
       }
       default: {
-        tagsSchema = schema.tags_schema[fieldName]
+        tagsSchema = entity.schema.tags_schema[fieldName]
         if (tagsSchema && tagsSchema.tags && isAllowed(tagsSchema.tags, tags)) {
           return value
         } else {
@@ -111,8 +124,7 @@ var formatFieldsPlugin = function (schema) {
 
   var getTagsFromSchema = function (schema) {
     var tagsSchema = {}
-    for (var name in schema.paths) {
-      var field = schema.paths[name]
+    for (var [name, field] of Object.entries(schema.paths)) {
       if ((field.instance === 'Array' || field.instance === 'Embedded') && field.schema) {
         if (field.schema.options.grants || field.schema.options.tags) {
           tagsSchema[name] = {
@@ -141,8 +153,7 @@ var formatFieldsPlugin = function (schema) {
 
   var getOutputFromSchema = function (schema) {
     var outputSchema = {}
-    for (var name in schema.paths) {
-      var field = schema.paths[name]
+    for (var [name, field] of Object.entries(schema.paths)) {
       if ((field.instance === 'Array' || field.instance === 'Embedded') && field.schema) {
         var subOutputSchema = getOutputFromSchema(field.schema)
         for (var subName in subOutputSchema) {
@@ -158,6 +169,19 @@ var formatFieldsPlugin = function (schema) {
       }
     }
     return outputSchema
+  }
+
+  var isVirtualField = function (entity, path) {
+    if (path === 'id') {
+      return false
+    }
+    for (var [fieldName, virtualField] of Object.entries(entity.schema.virtuals)) {
+      if (virtualField.path === path) {
+        console.log(path)
+        return true
+      }
+    }
+    return false
   }
 
   schema.tags_schema = getTagsFromSchema(schema)
@@ -217,17 +241,23 @@ var formatFieldsPlugin = function (schema) {
     return schema
   }
 
-  schema.static('format', function (entity, tags) {
+  schema.static('format', function (entity, tags, opts) {
+    var optsDefaults = { virtuals: false }
+
+    if (opts && typeof opts.virtuals !== 'undefined') {
+      optsDefaults.virtuals = opts.virtuals
+    }
+
     if (!tags || !Array.isArray(tags)) { tags = [] }
 
     tags.push('public')
 
-    var obj = Object.assign({}, entity.toObject())
-    return manageObject(obj, tags)
+    var obj = manageObject(entity, entity.toObject({ virtuals: optsDefaults.virtuals }), tags)
+    return obj
   })
 
-  schema.methods.format = function (tags) {
-    return schema.statics.format.call(this, this, tags)
+  schema.methods.format = function (tags, opts) {
+    return schema.statics.format.call(this, this, tags, opts)
   }
 }
 
