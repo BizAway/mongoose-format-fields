@@ -117,7 +117,7 @@ describe('Testing with virtuals – mongooose-format-fields plugin', function ()
       permits: ['edit', 'view', 'reject']
     }
 
-    var newUser = {
+    var newUsers = [{
       username: 'pippo',
       email: 'pippo@pippo.com',
       password: 'abcd12456',
@@ -134,7 +134,22 @@ describe('Testing with virtuals – mongooose-format-fields plugin', function ()
       }, {
         name: 'Pippuccino'
       }]
-    }
+    }, {
+      username: 'Caio',
+      email: 'caio@pippo.com',
+      password: 'abcd12456',
+      group_info: {
+        is_admin: false
+      },
+      birthday: birthday,
+      address: {
+        city: 'Milan',
+        nation: 'Italy'
+      },
+      aliases: [{
+        name: 'Tizio'
+      }]
+    }]
 
     Group.deleteMany({}, function (err) {
         assert.ifError(err)
@@ -149,9 +164,9 @@ describe('Testing with virtuals – mongooose-format-fields plugin', function ()
                   assert.ifError(err)
                   assert.ok(role)
           
-                  newUser.role_id = role.id
-                  newUser.group_info.group_id = group.id
-                  User.create(newUser, function (error, user) {
+                  newUsers[0].role_id = role.id
+                  newUsers[0].group_info.group_id = group.id
+                  User.insertMany(newUsers, function (error, user) {
                       assert.ifError(error)
                       assert.ok(user)
                       done()
@@ -198,6 +213,29 @@ describe('Testing with virtuals – mongooose-format-fields plugin', function ()
             description: 'The very Best Group'
           } 
         }
+      }
+      assert.deepStrictEqual(formatted, expected)
+      done()
+    })
+  })
+
+  it('Same but with -non populated- virtual fields', function (done) {
+    User.findOne({ email: 'caio@pippo.com' }).populate('role group_info.group').exec(function (err, doc) {
+      assert.ifError(err)
+
+      var formatted = doc.format(['owner'], { virtuals: true })
+      var expected = {username: 'Caio',
+        email: 'caio@pippo.com',
+        group_info: {
+          is_admin: false
+        },
+        birthday: birthday,
+        address: {
+          city: 'Milan',
+        },
+        aliases: [{
+          name: 'Tizio'
+        }]
       }
       assert.deepStrictEqual(formatted, expected)
       done()

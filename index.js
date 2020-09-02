@@ -51,13 +51,15 @@ var formatFieldsPlugin = function (schema) {
 
       if (isVirtual) {
         var virtualEntity = entity.get(fieldName)
-        if (type === 'array') {
-          output[name] = []
-          for (var [idx, item] of virtualEntity.entries()) {
-            output[name].push(manageObject(item, field[idx], tags))
+        if (virtualEntity) {
+          if (type === 'array') {
+            output[name] = []
+            for (var [idx, item] of virtualEntity.entries()) {
+              output[name].push(manageObject(item, field[idx], tags))
+            }
+          } else {
+            output[name] = manageObject(virtualEntity, field, tags)
           }
-        } else {
-          output[name] = manageObject(virtualEntity, field, tags)
         }
       } else {
         value = getValueByType(entity, fieldName, field, type, tags)
