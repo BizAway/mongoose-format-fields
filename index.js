@@ -90,7 +90,7 @@ var formatFieldsPlugin = function (schema) {
           } else if (Object.prototype.toString.call(value[0]) === '[object Object]') {
             var array = []
             for (var [idx, item] of Object.entries(value)) {
-              var entityObj = entity.get(fieldName)[idx];
+              var entityObj = entity.get(fieldName)[idx]
               if (entityObj.schema && entityObj.schema.virtuals && Object.keys(entityObj.schema.virtuals).length > 1) {
                 array.push(manageObject(entityObj, item, tags))
               } else {
