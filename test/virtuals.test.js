@@ -18,6 +18,18 @@ describe('Testing with virtuals – mongooose-format-fields plugin', function ()
 
     mongoose.deleteModel(/.*/);
 
+    var AliasSchema = new Schema({
+      name: {
+        type: String,
+        tags: ['owner', 'admin']
+      },
+      role_id: {
+        type: ObjectId
+      },
+    }, {
+      tags: ['owner', 'admin']
+    })
+
     var RoleSchema = new Schema({
       name: {
         type: String,
@@ -66,11 +78,13 @@ describe('Testing with virtuals – mongooose-format-fields plugin', function ()
           type: String
         }
       },
-      aliases: [mongoose.Schema({
-        name: {
-          type: String
+      aliases: [AliasSchema],
+      tokens: [mongoose.Schema({
+        id: {
+          type: Number,
+          tags: ['owner']
         }
-      })]
+      }, { tags: ['owner'] })]
     })
 
     UserSchema.virtual('role', {
@@ -87,16 +101,22 @@ describe('Testing with virtuals – mongooose-format-fields plugin', function ()
       justOne: true
     })
 
+    AliasSchema.virtual('role', {
+      ref: 'Role',
+      localField: 'role_id',
+      foreignField: '_id',
+      justOne: true
+    })
+
     UserSchema.plugin(FormatFieldsPlugin)
     RoleSchema.plugin(FormatFieldsPlugin)
     GroupSchema.plugin(FormatFieldsPlugin)
+    AliasSchema.plugin(FormatFieldsPlugin)
 
     UserSchema.addTagsSchema({
       'birthday': ['owner'],
       'address.city': ['owner', 'admin'],
-      'address.nation': ['admin'],
-      'aliases': ['owner'],
-      'aliases.$.name': ['owner']
+      'address.nation': ['admin']
     })
 
     RoleSchema.addTagsSchema({
@@ -133,7 +153,8 @@ describe('Testing with virtuals – mongooose-format-fields plugin', function ()
         name: 'Pippuz'
       }, {
         name: 'Pippuccino'
-      }]
+      }],
+      tokens: [{id: 1}, {id: 2}]
     }, {
       username: 'Caio',
       email: 'caio@pippo.com',
@@ -166,6 +187,7 @@ describe('Testing with virtuals – mongooose-format-fields plugin', function ()
           
                   newUsers[0].role_id = role.id
                   newUsers[0].group_info.group_id = group.id
+                  newUsers[0].aliases[0].role_id = role.id
                   User.insertMany(newUsers, function (error, user) {
                       assert.ifError(error)
                       assert.ok(user)
@@ -184,11 +206,12 @@ describe('Testing with virtuals – mongooose-format-fields plugin', function ()
   })
 
   it('format the output based on tags of virtual fields .format([\'tag\'], { virtuals: true })', function (done) {
-    User.findOne({ email: 'pippo@pippo.com' }).populate('role group_info.group').exec(function (err, doc) {
+    User.findOne({ email: 'pippo@pippo.com' }).populate('role group_info.group aliases.role').exec(function (err, doc) {
       assert.ifError(err)
       // ensure that we are loading the virtuals correctly
       assert.strictEqual('Editor', doc.role.name)
       assert.strictEqual('Best Group', doc.group_info.group.name)
+      assert.strictEqual('Editor', doc.aliases[0].role.name)
       var formatted = doc.format(['owner'], { virtuals: true })
       var expected = {
         username: 'pippo',
@@ -198,7 +221,11 @@ describe('Testing with virtuals – mongooose-format-fields plugin', function ()
           city: 'Spilimbergo'
         },
         aliases: [{
-          name: 'Pippuz'
+          name: 'Pippuz',
+          role: {
+            name: 'Editor',
+            permits: ['edit', 'view', 'reject']
+          }
         }, {
           name: 'Pippuccino'
         }],
@@ -212,7 +239,8 @@ describe('Testing with virtuals – mongooose-format-fields plugin', function ()
             name: 'Best Group',
             description: 'The very Best Group'
           } 
-        }
+        },
+        tokens: [{id: 1}, {id: 2}]
       }
       assert.deepStrictEqual(formatted, expected)
       done()
@@ -235,7 +263,8 @@ describe('Testing with virtuals – mongooose-format-fields plugin', function ()
         },
         aliases: [{
           name: 'Tizio'
-        }]
+        }],
+        tokens: []
       }
       assert.deepStrictEqual(formatted, expected)
       done()
