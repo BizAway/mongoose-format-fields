@@ -37,13 +37,17 @@ var format_fields_plugin = function (schema, plugin_options) {
         return false;
     };
 
+    var isConstructorObjectId = function (constructorName) {
+        return constructorName === 'ObjectId' || constructorName === 'ObjectID'
+    }
+
     var manageObject = function (obj, tags, prefix, return_always) {
         var output = {};
         for (var name in obj) {
             if (obj.hasOwnProperty(name)) {
                 if (name === '_id') {
                     type = 'id';
-                } else if (obj[name] && obj[name].constructor.name === 'ObjectID') {
+                } else if (obj[name] && isConstructorObjectId(obj[name].constructor.name)) {
                     type = 'other';
                 } else if (Object.prototype.toString.call(obj[name]) === '[object Array]') {
                     type = 'array';
@@ -77,7 +81,7 @@ var format_fields_plugin = function (schema, plugin_options) {
             case 'array': {
                 var tags_schema = schema.tags_schema[field_name];
                 if (tags_schema && tags_schema.tags && isAllowed(tags_schema.tags, tags)) {
-                    if (value[0] && value[0].constructor && value[0].constructor.name === 'ObjectID') {
+                    if (value[0] && value[0].constructor && isConstructorObjectId(value[0].constructor.name)) {
                         return value;
                     } else if (Object.prototype.toString.call(value[0]) === '[object Object]') {
                         var array = [];
