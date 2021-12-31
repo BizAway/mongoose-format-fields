@@ -39,7 +39,7 @@ var formatFieldsPlugin = function (schema) {
       var value
       if (name === '_id') {
         type = 'id'
-      } else if (field && field.constructor.name === 'ObjectID') {
+      } else if (field && field.constructor.name.toLowerCase() === 'ObjectId') {
         type = 'other'
       } else if (Object.prototype.toString.call(field) === '[object Array]') {
         type = 'array'
@@ -85,7 +85,7 @@ var formatFieldsPlugin = function (schema) {
       case 'array': {
         tagsSchema = entity.schema.tags_schema[fieldName]
         if (tagsSchema && tagsSchema.tags && isAllowed(tagsSchema.tags, tags)) {
-          if (value[0] && value[0].constructor && value[0].constructor.name === 'ObjectID') {
+          if (value[0] && value[0].constructor && value[0].constructor.name.toLowerCase() === 'ObjectId') {
             return value
           } else if (Object.prototype.toString.call(value[0]) === '[object Object]') {
             var array = []
